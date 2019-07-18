@@ -1,5 +1,49 @@
+import sys
 from abc import ABCMeta, abstractmethod
+from itertools import chain
 from unittest.mock import call
+
+
+class MocksExpectationsManager:
+    """
+    This class is responsible for checking expectations and releasing mocks after the check.
+    MocksExpectationsManager objects and also be used as context managers
+    """
+
+    def __init__(self, mocks):
+        self.mocks = mocks
+
+    def __enter__(self, *args, **kwargs):
+        pass
+
+    def __exit__(self, *args, **kwargs):
+        type, value, traceback = sys.exc_info()
+
+        # we have to release the mocks if any exception was raised within the context
+        if traceback:
+            self.release_mocks()
+        else:
+            self.satisfied()
+
+    @property
+    def expectations(self):
+        return chain(*[m.all_expectations() for m in self.mocks])
+
+    def release_mocks(self):
+        for mock in self.mocks:
+            mock.release()
+
+    def satisfied(self, release_mocks=True):
+        force_release = False
+        try:
+            for expectation in self.expectations:
+                expectation.satisfied()
+        except Exception as e:
+            force_release = True
+            raise e
+        finally:
+            if release_mocks or force_release:
+                self.release_mocks()
 
 
 class ExpectationInterface(metaclass=ABCMeta):

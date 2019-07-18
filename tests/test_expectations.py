@@ -2,7 +2,8 @@ import pytest
 from unittest import TestCase
 from unittest.mock import Mock
 
-from mocks_context.expectations import SingleCallExpectation, MultipleCallsExpectation, NoCallsExpectation
+from mocks_context.expectations import SingleCallExpectation, MultipleCallsExpectation, NoCallsExpectation, ExpectationInterface, MocksExpectationsManager
+from mocks_context.mocks import MockWithExpectations
 
 
 def assert_satisfied(expectation):
@@ -172,3 +173,184 @@ class NoCallsExpectationTests(TestCase):
     def test_no_calls_expectation_fails_if_any_call(self):
         self.mocked_method(1, 2, b=3, c=4)
         assert_not_satisfied(self.expectation)
+
+
+class MocksExpectationsManagerTests(TestCase):
+
+    def setUp(self):
+        self.mock_1 = Mock(spec=MockWithExpectations)
+        self.mock_2 = Mock(spec=MockWithExpectations)
+        self.expectations = MocksExpectationsManager([self.mock_1, self.mock_2])
+
+    def test_successful_mocks_expectations(self):
+        expectations_1 = [
+            Mock(spec=ExpectationInterface),
+            Mock(spec=ExpectationInterface),
+        ]
+        expectations_2 = [
+            Mock(spec=ExpectationInterface),
+            Mock(spec=ExpectationInterface),
+        ]
+        self.mock_1.all_expectations.return_value = expectations_1
+        self.mock_2.all_expectations.return_value = expectations_2
+        for expec in expectations_1 + expectations_2:
+            expec.satisfied.return_value = None
+
+        assert self.expectations.satisfied() is None
+
+        # ensure it queries over all expecations
+        self.mock_1.all_expectations.assert_called_once_with()
+        self.mock_2.all_expectations.assert_called_once_with()
+        # ensure it checks if all expectations are satisfied
+        for expec in expectations_1 + expectations_2:
+            expec.satisfied.assert_called_once_with()
+        # make sure it releases the mocks from their patches
+        self.mock_1.release.assert_called_once_with()
+        self.mock_2.release.assert_called_once_with()
+
+    def test_successful_mocks_expectations_without_releasing_mock(self):
+        expectations_1 = [
+            Mock(spec=ExpectationInterface),
+            Mock(spec=ExpectationInterface),
+        ]
+        expectations_2 = [
+            Mock(spec=ExpectationInterface),
+            Mock(spec=ExpectationInterface),
+        ]
+        self.mock_1.all_expectations.return_value = expectations_1
+        self.mock_2.all_expectations.return_value = expectations_2
+        for expec in expectations_1 + expectations_2:
+            expec.satisfied.return_value = None
+
+        assert self.expectations.satisfied(release_mocks=False) is None
+
+        # ensure it queries over all expecations
+        self.mock_1.all_expectations.assert_called_once_with()
+        self.mock_2.all_expectations.assert_called_once_with()
+        # ensure it checks if all expectations are satisfied
+        for expec in expectations_1 + expectations_2:
+            expec.satisfied.assert_called_once_with()
+        # make sure it does not release the mocks from their patches
+        assert self.mock_1.release.called is False
+        assert self.mock_2.release.called is False
+
+    def test_release_mocks_if_any_assertion_error(self):
+        expectations_1 = [
+            Mock(spec=ExpectationInterface),
+            Mock(spec=ExpectationInterface),
+        ]
+        expectations_2 = [
+            Mock(spec=ExpectationInterface),
+            Mock(spec=ExpectationInterface),
+        ]
+        self.mock_1.all_expectations.return_value = expectations_1
+        self.mock_2.all_expectations.return_value = expectations_2
+        for expec in expectations_1 + expectations_2:
+            expec.satisfied.side_effect = AssertionError
+
+        with pytest.raises(AssertionError):
+            self.expectations.satisfied(release_mocks=False)
+
+        # ensure it queries over all expecations
+        self.mock_1.all_expectations.assert_called_once_with()
+        self.mock_2.all_expectations.assert_called_once_with()
+
+        # ensure it ignores further expectations after one fail
+        expectations_1[0].satisfied.assert_called_once_with()
+        for expec in expectations_1[1:] + expectations_2:
+            assert expec.satisfied.called is False
+
+        # make sure it releases the mocks from their patches
+        self.mock_1.release.assert_called_once_with()
+        self.mock_2.release.assert_called_once_with()
+
+    def test_successful_mocks_expectations_as_context_manager(self):
+        expectations_1 = [
+            Mock(spec=ExpectationInterface),
+            Mock(spec=ExpectationInterface),
+        ]
+        expectations_2 = [
+            Mock(spec=ExpectationInterface),
+            Mock(spec=ExpectationInterface),
+        ]
+        self.mock_1.all_expectations.return_value = expectations_1
+        self.mock_2.all_expectations.return_value = expectations_2
+        for expec in expectations_1 + expectations_2:
+            expec.satisfied.return_value = None
+
+        with self.expectations:
+            assert True
+
+        # ensure it queries over all expecations
+        self.mock_1.all_expectations.assert_called_once_with()
+        self.mock_2.all_expectations.assert_called_once_with()
+        # ensure it checks if all expectations are satisfied
+        for expec in expectations_1 + expectations_2:
+            expec.satisfied.assert_called_once_with()
+        # make sure it releases the mocks from their patches
+        self.mock_1.release.assert_called_once_with()
+        self.mock_2.release.assert_called_once_with()
+
+    def test_release_mocks_if_any_assertion_error_as_context_manager(self):
+        expectations_1 = [
+            Mock(spec=ExpectationInterface),
+            Mock(spec=ExpectationInterface),
+        ]
+        expectations_2 = [
+            Mock(spec=ExpectationInterface),
+            Mock(spec=ExpectationInterface),
+        ]
+        self.mock_1.all_expectations.return_value = expectations_1
+        self.mock_2.all_expectations.return_value = expectations_2
+        for expec in expectations_1 + expectations_2:
+            expec.satisfied.side_effect = AssertionError
+
+        with pytest.raises(AssertionError):
+            with self.expectations:
+                pass
+
+        # ensure it queries over all expecations
+        self.mock_1.all_expectations.assert_called_once_with()
+        self.mock_2.all_expectations.assert_called_once_with()
+
+        # ensure it ignores further expectations after one fail
+        expectations_1[0].satisfied.assert_called_once_with()
+        for expec in expectations_1[1:] + expectations_2:
+            assert expec.satisfied.called is False
+
+        # make sure it releases the mocks from their patches
+        self.mock_1.release.assert_called_once_with()
+        self.mock_2.release.assert_called_once_with()
+
+    def test_do_not_check_for_expectations_if_any_error_was_raised_inside_the_context_manager(self):
+        def foo():
+            raise KeyError('Sample of an exception')
+
+        expectations_1 = [
+            Mock(spec=ExpectationInterface),
+            Mock(spec=ExpectationInterface),
+        ]
+        expectations_2 = [
+            Mock(spec=ExpectationInterface),
+            Mock(spec=ExpectationInterface),
+        ]
+        self.mock_1.all_expectations.return_value = expectations_1
+        self.mock_2.all_expectations.return_value = expectations_2
+
+        with pytest.raises(KeyError):
+            with self.expectations:
+                foo()
+
+        # ensure it queries over all expecations
+        self.mock_1.all_expectations.called is False
+        self.mock_2.all_expectations.called is False
+
+        # ensure it ignores all expectations
+        for expec in expectations_1 + expectations_2:
+            assert expec.satisfied.called is False
+
+        # make sure it releases the mocks from their patches
+        self.mock_1.release.assert_called_once_with()
+        self.mock_2.release.assert_called_once_with()
+
+
