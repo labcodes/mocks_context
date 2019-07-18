@@ -67,3 +67,18 @@ class MultipleCallsExpectation(ExpectationInterface):
                 assert match_call_count, msg
 
         self.mocked_method.assert_has_calls(self._calls, any_order=self.any_order)
+
+
+class NoCallsExpectation(ExpectationInterface):
+    """
+    Ensures that a mocked method wasn't called at all
+    """
+
+    def __init__(self, mocked_method):
+        self.mocked_method = mocked_method
+
+    def satisfied(self):
+        call_count = self.mocked_method.call_count
+        calls = self.mocked_method.call_args_list
+        msg = f'Mock {self.mocked_method} was called {call_count} times with the calls: {calls}.'
+        assert self.mocked_method.called is False, msg

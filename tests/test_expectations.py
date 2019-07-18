@@ -2,7 +2,7 @@ import pytest
 from unittest import TestCase
 from unittest.mock import Mock
 
-from mocks_context.expectations import SingleCallExpectation, MultipleCallsExpectation
+from mocks_context.expectations import SingleCallExpectation, MultipleCallsExpectation, NoCallsExpectation
 
 
 class SingleCallExpectationTests(TestCase):
@@ -164,3 +164,18 @@ class MultipleCallsExpectationTests(TestCase):
 
         with pytest.raises(AssertionError):
             self.expectation.satisfied()
+
+
+class NoCallsExpectationTests(TestCase):
+
+    def setUp(self):
+        self.mocked_method = Mock()
+        self.expectation = NoCallsExpectation(self.mocked_method)
+
+    def test_successful_no_calls_expectation(self):
+        assert self.expectation.satisfied() is None
+
+    def test_no_calls_expectation_fails_if_any_call(self):
+        self.mocked_method(1, 2, b=3, c=4)
+        with pytest.raises(AssertionError):
+            assert self.expectation.satisfied() is None
