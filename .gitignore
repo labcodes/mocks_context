@@ -1,0 +1,14 @@
+.Python
+.DS_Store
+*.pyc
+.vscode
+*.env
+*.swp
+*.swo
+*.swn
+*.map
+build
+dist
+*.egg-info
+.coverage
+htmlcov
