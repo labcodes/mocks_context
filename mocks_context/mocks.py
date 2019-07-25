@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
 
 
-class MockWithExpectations(metaclass=ABCMeta):
+
+class MockWithExpectationsInterface(metaclass=ABCMeta):
     """
     This base class defines the required API exposed by mocks created via MocksContext
     """
