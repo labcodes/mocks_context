@@ -90,7 +90,7 @@ class MultipleCallsExpectation(ExpectationInterface):
     def __init__(self, mocked_method, any_order=False, match_count=False):
         self.mocked_method = mocked_method
         self._calls = []
-        self.count = 0
+        self._count = 0
         self.any_order = any_order
         self.match_count = match_count
 
@@ -100,14 +100,26 @@ class MultipleCallsExpectation(ExpectationInterface):
         """
         self._calls.append(call(*args, **kwargs))
 
+    @property
+    def count(self):
+        return self._count or len(self._calls)
+
+    @count.setter
+    def count(self, value):
+        self._count = value
+
+    def ensure_call_count(self, count=None):
+        self.match_count = True
+        if count is not None:
+            self.count = count
+
     def satisfied(self):
         if self.match_count:
-            expected_count = self.count or len(self._calls)
-            match_call_count = self.mocked_method.call_count == expected_count
+            actual_calls = self.mocked_method.call_count
+            match_call_count = actual_calls == self.count
 
             if not match_call_count:
-                actual_calls = self.mocked_method.call_count
-                msg = f'Call count does not match for {self.mocked_method}: {actual_calls} calls from {expected_count} expected.'
+                msg = f'Call count does not match for {self.mocked_method}: {actual_calls} calls from {self.count} expected.'
                 assert match_call_count, msg
 
         self.mocked_method.assert_has_calls(self._calls, any_order=self.any_order)
