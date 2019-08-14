@@ -100,6 +100,8 @@ class MockedFunctionTests(TestCase):
         assert expectation.mocked_method == self.mock.mock_with_expectation.mock
 
     def test_mocked_function_can_have_only_a_sigle_expectation(self):
+        assert [] == self.mock.all_expectations()
+
         ret = self.mock.expect_no_calls()
         ret = self.mock.expect_call(10, 20, c=30, d=40)
         ret = self.mock.expect_single_call(50, 60, c=70, d=80)
