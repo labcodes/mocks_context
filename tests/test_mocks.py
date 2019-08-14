@@ -16,15 +16,15 @@ class MockedFunctionTests(TestCase):
     def test_set_output(self):
         ret = self.mock.set_output(42)
 
-        assert ret == self.mock
-        assert self.mock.mock.return_value == 42
+        assert ret == self.mock.mock_with_expectation
+        assert self.mock.mock_with_expectation.mock.return_value == 42
 
     def test_set_many_outputs(self):
         results = [42, 24, 50]
         ret = self.mock.set_many_outputs(results)
 
-        assert ret == self.mock
-        assert list(self.mock.mock.side_effect) == results
+        assert ret == self.mock.mock_with_expectation
+        assert list(self.mock.mock_with_expectation.mock.side_effect) == results
 
     def test_expect_single_call(self):
         ret = self.mock.expect_single_call(10, 20, c=30, d=40)
@@ -32,8 +32,8 @@ class MockedFunctionTests(TestCase):
         expectation = self.mock.all_expectations()[0]
         assert isinstance(expectation, SingleCallExpectation)
 
-        assert ret == self.mock
-        assert expectation.mocked_method == self.mock.mock
+        assert ret == self.mock.mock_with_expectation
+        assert expectation.mocked_method == self.mock.mock_with_expectation.mock
         assert expectation.call_args == (10, 20)
         assert expectation.call_kwargs == {'c': 30, 'd': 40}
 
@@ -44,8 +44,8 @@ class MockedFunctionTests(TestCase):
         expectation = self.mock.all_expectations()[0]
         assert isinstance(expectation, MultipleCallsExpectation)
 
-        assert ret == self.mock
-        assert expectation.mocked_method == self.mock.mock
+        assert ret == self.mock.mock_with_expectation
+        assert expectation.mocked_method == self.mock.mock_with_expectation.mock
         assert expectation.any_order is False
         assert expectation.match_count is False
         assert expectation.count == 2
@@ -60,8 +60,8 @@ class MockedFunctionTests(TestCase):
         expectation = self.mock.all_expectations()[0]
         assert isinstance(expectation, MultipleCallsExpectation)
 
-        assert ret == self.mock
-        assert expectation.mocked_method == self.mock.mock
+        assert ret == self.mock.mock_with_expectation
+        assert expectation.mocked_method == self.mock.mock_with_expectation.mock
         assert expectation.match_count is True
         assert expectation.count == 2
 
@@ -73,8 +73,8 @@ class MockedFunctionTests(TestCase):
         expectation = self.mock.all_expectations()[0]
         assert isinstance(expectation, MultipleCallsExpectation)
 
-        assert ret == self.mock
-        assert expectation.mocked_method == self.mock.mock
+        assert ret == self.mock.mock_with_expectation
+        assert expectation.mocked_method == self.mock.mock_with_expectation.mock
         assert expectation.match_count is True
         assert expectation.count == 20
 
@@ -84,8 +84,8 @@ class MockedFunctionTests(TestCase):
         expectation = self.mock.all_expectations()[0]
         assert isinstance(expectation, MultipleCallsExpectation)
 
-        assert ret == self.mock
-        assert expectation.mocked_method == self.mock.mock
+        assert ret == self.mock.mock_with_expectation
+        assert expectation.mocked_method == self.mock.mock_with_expectation.mock
         assert expectation.match_count is True
         assert expectation.count == 0
 
@@ -95,8 +95,8 @@ class MockedFunctionTests(TestCase):
         expectation = self.mock.all_expectations()[0]
         assert isinstance(expectation, NoCallsExpectation)
 
-        assert ret == self.mock
-        assert expectation.mocked_method == self.mock.mock
+        assert ret == self.mock.mock_with_expectation
+        assert expectation.mocked_method == self.mock.mock_with_expectation.mock
 
     def test_mocked_function_can_have_only_a_sigle_expectation(self):
         ret = self.mock.expect_no_calls()
