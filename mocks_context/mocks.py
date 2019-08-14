@@ -4,20 +4,6 @@ from unittest.mock import patch
 from mocks_context.expectations import SingleCallExpectation, MultipleCallsExpectation, NoCallsExpectation
 
 
-class MockWithExpectationsInterface(metaclass=ABCMeta):
-    """
-    This base class defines the required API exposed by mocks created via MocksContext
-    """
-
-    @abstractmethod
-    def all_expectations(self):
-        pass
-
-    @abstractmethod
-    def release(self):
-        pass
-
-
 class MockWithExpectation:
     """
     This class depends on a regular Python mock from mock lib and exposes
@@ -81,7 +67,21 @@ class MockWithExpectation:
         return self
 
 
-class MockedFunction(MockWithExpectationsInterface):
+class ContextualizedMockInterface(metaclass=ABCMeta):
+    """
+    This base class defines the required API exposed by mocks created via MocksContext
+    """
+
+    @abstractmethod
+    def all_expectations(self):
+        pass
+
+    @abstractmethod
+    def release(self):
+        pass
+
+
+class MockedFunction(ContextualizedMockInterface):
     """
     This class is used to mock regular python functions
     """

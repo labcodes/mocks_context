@@ -3,7 +3,7 @@ from unittest import TestCase
 from unittest.mock import Mock
 
 from mocks_context.expectations import SingleCallExpectation, MultipleCallsExpectation, NoCallsExpectation, ExpectationInterface, MocksExpectationsManager
-from mocks_context.mocks import MockWithExpectationsInterface
+from mocks_context.mocks import ContextualizedMockInterface
 
 
 def assert_satisfied(expectation):
@@ -178,8 +178,8 @@ class NoCallsExpectationTests(TestCase):
 class MocksExpectationsManagerTests(TestCase):
 
     def setUp(self):
-        self.mock_1 = Mock(spec=MockWithExpectationsInterface)
-        self.mock_2 = Mock(spec=MockWithExpectationsInterface)
+        self.mock_1 = Mock(spec=ContextualizedMockInterface)
+        self.mock_2 = Mock(spec=ContextualizedMockInterface)
         self.expectations = MocksExpectationsManager([self.mock_1, self.mock_2])
 
     def test_successful_mocks_expectations(self):
@@ -352,5 +352,3 @@ class MocksExpectationsManagerTests(TestCase):
         # make sure it releases the mocks from their patches
         self.mock_1.release.assert_called_once_with()
         self.mock_2.release.assert_called_once_with()
-
-
