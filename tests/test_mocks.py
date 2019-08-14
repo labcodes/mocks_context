@@ -1,3 +1,4 @@
+import pytest
 from unittest import TestCase
 from unittest.mock import patch, call
 
@@ -107,3 +108,22 @@ class MockedFunctionTests(TestCase):
 
         assert 1 == len(expectations)
         assert isinstance(expectations[0], SingleCallExpectation)
+
+    def test_raises_error_if_call_violates_method_contract(self):
+        py_mock = self.mock.mock_with_expectation.mock
+
+        py_mock(1, 2, 3, 4)
+        py_mock.assert_called_once_with(1, 2, c=3, d=4)
+        py_mock.reset_mock()
+
+        py_mock(1, 2, d=4, c=3)
+        py_mock.assert_called_once_with(1, 2, c=3, d=4)
+        py_mock.reset_mock()
+
+        py_mock(*(1, 2), **dict(d=4, c=3))
+        py_mock.assert_called_once_with(1, 2, c=3, d=4)
+        py_mock.reset_mock()
+
+        # should raise type error if called with invalid params
+        with pytest.raises(TypeError):
+            py_mock("invalid paramas")

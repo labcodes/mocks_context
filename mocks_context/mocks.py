@@ -90,8 +90,8 @@ class MockedFunction(ContextualizedMockInterface):
         """
         callable_path is a string with the full path to the function that'll be mocked.
         """
-        self.patcher = patch(callable_path, spec=True)
-        self._mock_function = self.patcher.start()
+        self._patcher = patch(callable_path, autospec=True)
+        self._mock_function = self._patcher.start()
         self.mock_with_expectation = MockWithExpectation(self._mock_function)
 
     def all_expectations(self):
@@ -104,7 +104,7 @@ class MockedFunction(ContextualizedMockInterface):
         return []
 
     def release(self):
-        self.patcher.stop()
+        self._patcher.stop()
 
     def set_output(self, *args, **kwargs):
         self.mock_with_expectation.set_output(*args, **kwargs)
